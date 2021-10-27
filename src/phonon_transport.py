@@ -10,7 +10,7 @@ from scipy.linalg import eig
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from turbomoleOutputProcessing import turbomoleOutputProcessing as top 
+from turbomoleOutputProcessing import turbomoleOutputProcessing as top
 import fnmatch
 import scipy.signal
 from multiprocessing import Pool
@@ -21,16 +21,15 @@ from scipy import integrate
 h_bar = 1.0545718*10**(-34)
 
 def calculate_g0(w, w_D):
-	"""
-    Calculates surface greens function according to Markussen, T. (2013). Phonon interference effects in molecular junctions. The Journal of chemical physics, 139(24), 244101.
+	"""Calculates surface greens function according to Markussen, T. (2013). Phonon interference effects in molecular junctions. The Journal of chemical physics, 139(24), 244101 (https://doi.org/10.1063/1.4849178).
 
     Args:
-    	param1 (float): frequency
-		param2 (float): Debeye frequency
+    w (array_like): Frequency where g0 is calculated
+	w_D (float): Debeye frequency
 
     Returns:
-    	(np.array) surface greens function
-	"""  
+    g0	(array_like) Surface greens function g0
+	"""
 
 	def im_g(w):
 		if(w<=w_D):
@@ -39,25 +38,25 @@ def calculate_g0(w, w_D):
 			Im_g = 0
 		return Im_g
 	Im_g = map(im_g,w)
-	Im_g = np.asarray(list(Im_g))	
+	Im_g = np.asarray(list(Im_g))
 	Re_g = -np.asarray(np.imag(scipy.signal.hilbert(Im_g)))
 	g0=np.asarray((Re_g+1.j*Im_g),complex)
 	return g0
 
 
 def calculate_Sigma(w,g0,gamma, M_L, M_C):
-	"""
-    Calculates self energy according to Markussen, T. (2013). Phonon interference effects in molecular junctions. The Journal of chemical physics, 139(24), 244101.
+	"""Calculates self energy according to Markussen, T. (2013). Phonon interference effects in molecular junctions. The Journal of chemical physics, 139(24), 244101  (https://doi.org/10.1063/1.4849178).
 
     Args:
-    	param1 (np.array): frequency
-    	param2 (np.array): g0
-		param2 (float): gamma
-		param3 (String): M_L atom type in resevoir
-		param4 (String): M_C atom type coupled to resevoir           
+    w (np.array): frequency
+    g0 (np.array): g0
+	gamma (float): gamma
+	M_L (str): M_L atom type in reservoir
+	M_C (str): M_C atom type coupled to reservoir
+
     Returns:
-    	(population, fitness_values)
-	"""   
+    sigma_nu (array_like) self energy term
+	"""
 
 	#convert to hartree/Bohr**2
 	gamma = gamma * 0.010290855869847846
@@ -73,18 +72,14 @@ def calculate_Sigma(w,g0,gamma, M_L, M_C):
 	return sigma_nu
 
 def calculate_P(i,para):
-	"""
-    Calculates Greens Function with given parameters at given frequency w for three coupled masses.
+	"""Calculates Greens Function with given parameters at given frequency w for three coupled masses.
 
     Args:
-    	param1 (float): frequency
-		param2 (float): spring constant k
-		param3 (float): mass m
-		param4 (float): coupling constant Lambda
-		param5 (float): coupling constant Gamma            
+    i (int): frequency index
+	para (tuple): spring constant k, mass m, coulpling constant Lambda, coupling constant Gamma
+
     Returns:
-    	(population, fitness_values)
-            
+    P (array_like): phonon transmission
     """
 	w = para[0]
 	sigma = para[1]
@@ -114,7 +109,7 @@ def calculate_P(i,para):
 	sigma_R = np.zeros((n_atoms*3,n_atoms*3), complex)
 	if(in_plane==True):
 		lower = 2
-	else: 
+	else:
 		lower = 0
 	for u in range(lower,3):
 		sigma_L[n_l*3+u][n_l*3+u] = sigma[i]
@@ -125,7 +120,7 @@ def calculate_P(i,para):
 	for u in range(lower,3):
 		K[n_l*3+u][n_l*3+u]=(K[n_l*3+u][n_l*3+u]*top.atom_weight(M_C)-gamma)/top.atom_weight(M_C)
 		K[n_r*3+u][n_r*3+u]=(K[n_r*3+u][n_r*3+u]*top.atom_weight(M_C)-gamma)/top.atom_weight(M_C)
-	
+
 
 	#calculate greens function
 	G = np.linalg.inv(w[i]**2*np.identity(3*n_atoms)-K-sigma_L-sigma_R)
@@ -136,6 +131,15 @@ def calculate_P(i,para):
 
 
 def calculate_kappa(P,w, T):
+	"""Calculates Thermal conductance up to given Temperature
+	Args:
+		P: (array_like): Phonon transmission
+		w: (array_like): frequency in atomic units
+		T: (float): Temperature in Kelvin
+
+	Returns:
+		kappa (float) Termal conductance
+	"""
 	w_si=w*np.sqrt(9.375821464623672e+29)
 	k_B=1.38064852*10E-23
 	factor = np.sqrt(9.375821464623672e+29)*h_bar/k_B
@@ -143,12 +147,12 @@ def calculate_kappa(P,w, T):
 	prefactor = h_bar**2/(2*np.pi*k_B)*9.375821464623672e+29*np.sqrt(9.375821464623672e+29)*1E12
 	#print(prefactor)
 	kappa = list()
-	exp = np.exp((w)/(T)*factor)	
+	exp = np.exp((w)/(T)*factor)
 	#print(T)
 	#print(exp)
-	
+
 	#print(exp)
-	
+
 	integrand= (1/T**2)*w**2*P*exp/((exp-1)**2)
 	print(integrand)
 	#integral = np.cumsum(integrand)[-1]
@@ -168,7 +172,7 @@ if __name__ == '__main__':
 	M_L="N"
 	M_C="Au"
 	#coupling force constant resevoir in eV/Ang**2
-	gamma = -1.401986386	
+	gamma = -1.401986386
 	#Debeye energy in meV
 	E_D=20
 	#Number of grid points
@@ -179,14 +183,14 @@ if __name__ == '__main__':
 
 	#convert to J
 	E_D = E_D*1.60217656535E-22
-	#convert to my units 
+	#convert to my units
 	w_D = E_D/h_bar
 	w_D = w_D/np.sqrt(9.375821464623672e+29)
 
 
-	
+
 	w = np.linspace(0.000,w_D*1.1,N)
-	i =np.linspace(0,N,N,False,dtype=int)    
+	i =np.linspace(0,N,N,False,dtype=int)
 	g0 = calculate_g0(w,w_D)
 	Sigma = calculate_Sigma(w,g0,gamma,M_L,M_C)
 
@@ -205,7 +209,7 @@ if __name__ == '__main__':
 	stop = time.time()
 
 	print("transformed in " + str(stop-start))
-	
+
 	T=np.linspace(5,600,1000)
 	#w_int = np.linspace(0.000,w_D*100,N*100)
 	kappa=list()
@@ -232,6 +236,6 @@ if __name__ == '__main__':
 	ax2.set_ylabel(r'Thermal Conductance $\mathrm{pw/K}$',fontsize=12)
 	plt.savefig(filename + "/transport.pdf", bbox_inches='tight')
 	plt.show()
-	
+
 
 
