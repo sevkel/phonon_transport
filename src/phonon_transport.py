@@ -72,15 +72,16 @@ def calculate_Sigma(w,g0,gamma, M_L, M_C):
 	return sigma_nu
 
 def calculate_P(i,para):
-	"""Calculates Greens Function with given parameters at given frequency w for three coupled masses.
+	"""Calculates Greens Function with given parameters at given frequency w.
 
-    Args:
-    i (int): frequency index
-	para (tuple): spring constant k, mass m, coulpling constant Lambda, coupling constant Gamma
+	Args:
+		i: (int): frequency index
+		para: (tuple): frequency w (array), self energy sigma (complex), filename_hessian (str), filename_coord (str), left atom for transport calculation n_l (int), right atom for transport calculation n_r (int), coupling constant Gamma (complex), in_plane (boolean)
 
-    Returns:
-    P (array_like): phonon transmission
-    """
+	Returns:
+		P (array_like): phonon transmission
+	"""
+
 	w = para[0]
 	sigma = para[1]
 	filename_hessian = para[2]
@@ -111,9 +112,16 @@ def calculate_P(i,para):
 		lower = 2
 	else:
 		lower = 0
-	for u in range(lower,3):
-		sigma_L[n_l*3+u][n_l*3+u] = sigma[i]
-		sigma_R[n_r*3+u][n_r*3+u] = sigma[i]
+
+	for n_l in n_l:
+		for u in range(lower,3):
+			sigma_L[n_l*3+u,n_l*3+u] = sigma[i]
+			#sigma_R[n_r*3+u][n_r*3+u] = sigma[i]
+	for n_r in n_r:
+		for u in range(lower,3):
+			#sigma_L[n_l*3+u][n_l*3+u] = sigma[i]
+			sigma_R[n_r*3+u,n_r*3+u] = sigma[i]
+	sigma_i = sigma[i]
 
 	#correct momentum conservation
 	gamma = gamma * 0.010290855869847846
@@ -138,7 +146,7 @@ def calculate_kappa(P,w, T):
 		T: (float): Temperature in Kelvin
 
 	Returns:
-		kappa (float) Termal conductance
+		kappa (float) Thermal conductance
 	"""
 	w_si=w*np.sqrt(9.375821464623672e+29)
 	k_B=1.38064852*10E-23
@@ -154,7 +162,7 @@ def calculate_kappa(P,w, T):
 	#print(exp)
 
 	integrand= (1/T**2)*w**2*P*exp/((exp-1)**2)
-	print(integrand)
+	#print(integrand)
 	#integral = np.cumsum(integrand)[-1]
 	integral = np.trapz(integrand, w)
 
@@ -163,11 +171,11 @@ def calculate_kappa(P,w, T):
 
 
 if __name__ == '__main__':
-	filename="benzenediamine"
+	filename="C:/Users/Matthias Blaschke/OneDrive - Universität Augsburg/Promotion/phonon_transport/data/pOPE3_hh_small_tips/"
 	filename_hessian = filename+"/hessian"
 	filename_coord = filename+"/coord.xyz"
-	n_l = 4
-	n_r = 10
+	n_l = [0,1,2]
+	n_r = [39,40,41]
 	#atom type in resevoir M_L and molecule M_C
 	M_L="N"
 	M_C="Au"
@@ -176,7 +184,7 @@ if __name__ == '__main__':
 	#Debeye energy in meV
 	E_D=20
 	#Number of grid points
-	N = 2000
+	N = 500
 	#only in plane motion (-> set x and y coupling to zero)
 	in_plane = False
 
@@ -189,7 +197,7 @@ if __name__ == '__main__':
 
 
 
-	w = np.linspace(0.000,w_D*1.1,N)
+	w = np.linspace(0.0,w_D*1.1,N)
 	i =np.linspace(0,N,N,False,dtype=int)
 	g0 = calculate_g0(w,w_D)
 	Sigma = calculate_Sigma(w,g0,gamma,M_L,M_C)
