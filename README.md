@@ -1,15 +1,15 @@
 # Phonon Transport
-
-##Requirements
+Calculated the phononic transport according to [[1]](#1).
+## Requirements
 * Python 3.x
 * [TurbomoleOutputProcessing](https://topdocu.github.io/)
 
-##Usage
+## Usage
 ```` 
 python3 phonon_transport.py config_file
 ```` 
 
-###Config file
+### Config file
 ```` 
 [Data Input]
 data_path= #path where data is located
@@ -31,7 +31,17 @@ kappa_grid_points= #number of grid point in thermal conductance integral
 
 ````
 
-###Output
+### Output
 * data_path/phonon_trans.dat
 * data_path/kappa.dat
 * data_path/transport.pdf
+
+## References
+<a id="1">[1]</a> 
+Markussen, T. (2013).  
+Phonon interference effects in molecular junctions. 
+The Journal of chemical physics, 139(24), 244101.
+[https://doi.org/10.1063/1.4849178]( https://doi.org/10.1063/1.4849178)
+
+***
+Matthias Blaschke [matthias.blaschke@physik.uni-augsburg.de](matthias.blaschke@pyhsik.uni-augsburg.de)
