@@ -1,0 +1,17 @@
+[Data Input]
+data_path=C:/Users/Matthias Blaschke/OneDrive - Universität Augsburg/Promotion/phonon_transport/data/pOPE3_hh_small_tips
+hessian_name=hessian
+coord_name=coord.xyz
+
+[Calculation]
+n_l=5,1,2
+n_r=1,2,3
+M_L=Au
+M_C=Au
+gamma=-1.401986386
+E_D=20
+N=500
+in_plane=False 
+T_min=5
+T_max=400
+kappa_grid_points=1000

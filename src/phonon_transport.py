@@ -3,7 +3,8 @@
     Author: Matthias Blaschke
     Python Version: 3.9
 '''
-
+import codecs
+import sys
 
 import numpy as np
 from scipy.linalg import eig
@@ -16,6 +17,7 @@ import scipy.signal
 from multiprocessing import Pool
 from functools import partial
 import time
+import configparser
 from scipy import integrate
 
 h_bar = 1.0545718*10**(-34)
@@ -171,23 +173,45 @@ def calculate_kappa(P,w, T):
 
 
 if __name__ == '__main__':
-	filename="C:/Users/Matthias Blaschke/OneDrive - Universität Augsburg/Promotion/phonon_transport/data/pOPE3_hh_small_tips/"
-	filename_hessian = filename+"/hessian"
-	filename_coord = filename+"/coord.xyz"
-	n_l = [0,1,2]
-	n_r = [39,40,41]
-	#atom type in resevoir M_L and molecule M_C
-	M_L="N"
-	M_C="Au"
-	#coupling force constant resevoir in eV/Ang**2
-	gamma = -1.401986386
-	#Debeye energy in meV
-	E_D=20
-	#Number of grid points
-	N = 500
-	#only in plane motion (-> set x and y coupling to zero)
-	in_plane = False
+	config_path = sys.argv[1]
+	cfg = configparser.ConfigParser()
+	#cfg.read(config_path)
+	cfg.read_file(codecs.open(config_path, "r", "utf8"))
 
+	try:
+		data_path= str(cfg.get('Data Input', 'data_path'))
+		hessian_name=str(cfg.get('Data Input', 'hessian_name'))
+		coord_name = str(cfg.get('Data Input', 'coord_name'))
+		filename_hessian = data_path + "/" + hessian_name
+		filename_coord = data_path + "/" + coord_name
+
+		#atoms which are coupled to the leads -> self energy
+		n_l = np.asarray(str(cfg.get('Calculation', 'n_l')).split(','),dtype=int)
+		n_r = np.asarray(str(cfg.get('Calculation', 'n_r')).split(','),dtype=int)
+
+		#atom type in resevoir M_L and molecule M_C
+		M_L=str(cfg.get('Calculation', 'M_L'))
+		M_C=str(cfg.get('Calculation', 'M_C'))
+		#coupling force constant resevoir in eV/Ang**2
+		gamma = float(cfg.get('Calculation', 'gamma'))
+
+		#Debeye energy in meV
+		E_D = float(cfg.get('Calculation', 'E_D'))
+		#Number of grid points
+		N = int(cfg.get('Calculation', 'N'))
+		#only in plane motion (-> set x and y coupling to zero)
+		in_plane = bool(cfg.get('Calculation', 'in_plane'))
+
+		#for thermal conducatance
+		T_min = float(cfg.get('Calculation', 'T_min'))
+		T_max = float(cfg.get('Calculation', 'T_max'))
+		kappa_grid_points = int(cfg.get('Calculation', 'kappa_grid_points'))
+	except configparser.NoOptionError:
+		print("Missing option in config file. Check config file!")
+		exit(-1)
+	except ValueError:
+		print("Wrong value in config file. Check config file!")
+		exit(-1)
 
 	#convert to J
 	E_D = E_D*1.60217656535E-22
@@ -218,15 +242,15 @@ if __name__ == '__main__':
 
 	print("transformed in " + str(stop-start))
 
-	T=np.linspace(5,600,1000)
+	T=np.linspace(T_min,T_max,kappa_grid_points)
 	#w_int = np.linspace(0.000,w_D*100,N*100)
 	kappa=list()
 	for i in range(0,len(T)):
 		kappa.append(calculate_kappa(P_vals[1:len(P_vals)], w[1:len(w)], T[i]))
 
 	#save data
-	top.write_plot_data(filename + "/phonon_trans.dat", (w,P_vals), "w (weird units), P_vals")
-	top.write_plot_data(filename + "/kappa.dat", (T,kappa),"T (K), kappa (pW/K)")
+	top.write_plot_data(data_path + "/phonon_trans.dat", (w, P_vals), "w (weird units), P_vals")
+	top.write_plot_data(data_path + "/kappa.dat", (T, kappa), "T (K), kappa (pW/K)")
 
 	#now plot everything
 	E = w*np.sqrt(9.375821464623672e+29)*h_bar/(1.60217656535E-22)
@@ -242,7 +266,7 @@ if __name__ == '__main__':
 	ax2.plot(T,kappa)
 	ax2.set_xlabel('Temperature ($K$)',fontsize=12)
 	ax2.set_ylabel(r'Thermal Conductance $\mathrm{pw/K}$',fontsize=12)
-	plt.savefig(filename + "/transport.pdf", bbox_inches='tight')
+	plt.savefig(data_path + "/transport.pdf", bbox_inches='tight')
 	plt.show()
 
 
