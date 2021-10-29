@@ -15,3 +15,6 @@ in_plane=False
 T_min=5
 T_max=400
 kappa_grid_points=1000
+
+[Data Output]
+plot_g=False

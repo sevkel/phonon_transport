@@ -29,12 +29,16 @@ T_min= #lower bound for thermal conductance integral (avoid zero)
 T_max= #upper bound for thermal conductance integral
 kappa_grid_points= #number of grid point in thermal conductance integral
 
+[Data Output]
+plot_g=True #plot surface green function 
+
 ````
 
 ### Output
 * data_path/phonon_trans.dat
 * data_path/kappa.dat
 * data_path/transport.pdf
+* data_path/g0.pdf (optional, see plot_g)
 
 ## References
 <a id="1">[1]</a> 

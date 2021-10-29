@@ -30,7 +30,7 @@ def calculate_kappa(tau_ph, E, T):
     prefactor = 1./(h*k_B*T**2)
     beta = 1/(k_B*T)
     exp_ = np.exp(E*beta)
-    integrand = E ** 2 * thau_ph * exp_ / ((exp_ - 1) ** 2)
+    integrand = E ** 2 * tau_ph * exp_ / ((exp_ - 1) ** 2)
 
     integral = np.trapz(integrand, E)
 

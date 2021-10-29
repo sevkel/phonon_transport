@@ -4,6 +4,7 @@
     Python Version: 3.9
 '''
 import codecs
+import copy
 import sys
 
 import numpy as np
@@ -18,6 +19,7 @@ from multiprocessing import Pool
 from functools import partial
 import time
 import configparser
+import calculate_kappa as ck
 from scipy import integrate
 
 #h_bar in Js
@@ -27,6 +29,7 @@ ang2bohr = 1.88973
 har2J = 4.35974E-18
 bohr2m = 5.29177E-11
 u2kg = 1.66054E-27
+har2pJ = 4.35974e-6
 
 def calculate_g0(w, w_D):
 	"""Calculates surface greens function according to Markussen, T. (2013). Phonon interference effects in molecular junctions. The Journal of chemical physics, 139(24), 244101 (https://doi.org/10.1063/1.4849178).
@@ -41,7 +44,7 @@ def calculate_g0(w, w_D):
 
 	def im_g(w):
 		if(w<=w_D):
-			Im_g = -np.pi*3.0*w/(2*w_D)
+			Im_g = -np.pi*3.0*w/(2*w_D**3)
 		else:
 			Im_g = 0
 		return Im_g
@@ -132,27 +135,40 @@ def calculate_P(i,para):
 	#correct momentum conservation
 	#convert to hartree/Bohr**2
 	gamma_hb = gamma * eV2hartree/ang2bohr**2
+
+	D_save = copy.deepcopy(D)
 	for u in range(lower,3):
 		for n_l_ in n_l:
 			#remove mass weighting
-			K_ = D[n_l_*3+u][n_l_*3+u]*np.sqrt(top.atom_weight(M_C)*top.atom_weight(M_L))
+			K_ = D[n_l_*3+u][n_l_*3+u]*top.atom_weight(M_C)
 			#correct momentum
 			K_ = K_ - gamma_hb
 			#add mass weighting again
-			D_ = K_/np.sqrt(top.atom_weight(M_C)*top.atom_weight(M_L))
+			D_ = K_/top.atom_weight(M_C)
 			D[n_l_ * 3 + u][n_l_ * 3 + u] = D_
 
 		for n_r_ in n_r:
 			#remove mass weighting
-			K_ = D[n_r_*3+u][n_r_*3+u]*np.sqrt(top.atom_weight(M_C)*top.atom_weight(M_L))
+			K_ = D[n_r_*3+u][n_r_*3+u]*top.atom_weight(M_C)
 			#correct momentum
-			K_ = K_ - gamma
+			K_ = K_ - gamma_hb
 			#add mass weighting again
-			D_ = K_/np.sqrt(top.atom_weight(M_C)*top.atom_weight(M_L))
+			D_ = K_/top.atom_weight(M_C)
 			D[n_r_ * 3 + u][n_r_ * 3 + u] = D_
+		#"""
+	"""
+	n_l = n_l[0]
+	n_r = n_r[0]
+	D[n_l * 3 + u][n_l * 3 + u] = (D[n_l * 3 + u][n_l * 3 + u] * top.atom_weight(M_C) - gamma_hb) / top.atom_weight(
+		M_C)
+	D[n_r * 3 + u][n_r * 3 + u] = (D[n_r * 3 + u][n_r * 3 + u] * top.atom_weight(M_C) - gamma_hb) / top.atom_weight(
+		M_C)
+	"""
 
 
 
+	#extra broadening
+	eta = np.full((n_atoms*3, n_atoms*3), 1.j*1E-8)
 
 	#calculate greens function
 	G = np.linalg.inv(w[i]**2*np.identity(3*n_atoms)-D-sigma_L-sigma_R)
@@ -173,10 +189,11 @@ def calculate_kappa(P,w, T):
 		kappa (float) Thermal conductance
 	"""
 	w_si=w*np.sqrt(9.375821464623672e+29)
+	#Boltzmann constant in Si units
 	k_B=1.38064852*10E-23
 	factor = np.sqrt(9.375821464623672e+29)*h_bar/k_B
 	#print("factor " +str(factor))
-	prefactor = h_bar**2/(2*np.pi*k_B)*9.375821464623672e+29*np.sqrt(9.375821464623672e+29)*1E12
+	prefactor = h_bar**2/(2*np.pi*k_B*T**2)*9.375821464623672e+29*np.sqrt(9.375821464623672e+29)*1E12
 	#print(prefactor)
 	kappa = list()
 	exp = np.exp((w)/(T)*factor)
@@ -185,7 +202,7 @@ def calculate_kappa(P,w, T):
 
 	#print(exp)
 
-	integrand= (1/T**2)*w**2*P*exp/((exp-1)**2)
+	integrand= w**2*P*exp/((exp-1)**2)
 	#print(integrand)
 	#integral = np.cumsum(integrand)[-1]
 	integral = np.trapz(integrand, w)
@@ -228,6 +245,10 @@ if __name__ == '__main__':
 		T_min = float(cfg.get('Calculation', 'T_min'))
 		T_max = float(cfg.get('Calculation', 'T_max'))
 		kappa_grid_points = int(cfg.get('Calculation', 'kappa_grid_points'))
+
+		#check if g0 should be plotted
+		plot_g0 = bool(cfg.get('Data Output', 'plot_g'))
+
 	except configparser.NoOptionError:
 		print("Missing option in config file. Check config file!")
 		exit(-1)
@@ -247,12 +268,15 @@ if __name__ == '__main__':
 	w = np.linspace(0.0,w_D*1.1,N)
 	i =np.linspace(0,N,N,False,dtype=int)
 	g0 = calculate_g0(w,w_D)
-	g0 = g0 - 1.j
-	fig, ax1 = plt.subplots()
-	ax1.plot(np.real(g0))
-	ax1.plot(np.imag(g0), color="red")
-	plt.grid()
-	plt.show()
+
+	if(plot_g0==True):
+		fig, ax1 = plt.subplots()
+		ax1.plot(np.real(g0))
+		ax1.plot(np.imag(g0), color="red", label="Im(g0)")
+		ax1.plot(np.real(g0), color="green", label="Re(g0)")
+		plt.grid()
+		plt.savefig(data_path + "/g0.pdf", bbox_inches='tight')
+
 
 	Sigma = calculate_Sigma(w,g0,gamma,M_L,M_C)
 
@@ -275,8 +299,13 @@ if __name__ == '__main__':
 	T=np.linspace(T_min,T_max,kappa_grid_points)
 	#w_int = np.linspace(0.000,w_D*100,N*100)
 	kappa=list()
+	#w to SI
+	w_kappa = w*np.sqrt(9.375821464623672e+29)
+	E = h_bar*w_kappa
+	#joule to hartree
+	E = E/har2J
 	for i in range(0,len(T)):
-		kappa.append(calculate_kappa(P_vals[1:len(P_vals)], w[1:len(w)], T[i]))
+		kappa.append(ck.calculate_kappa(P_vals[1:len(P_vals)], E[1:len(E)], T[i])*har2pJ)
 
 	#save data
 	top.write_plot_data(data_path + "/phonon_trans.dat", (w, P_vals), "w (weird units), P_vals")
@@ -291,7 +320,7 @@ if __name__ == '__main__':
 	ax1.set_xlabel('Phonon Energy ($\mathrm{meV}$)',fontsize=12)
 	ax1.set_ylabel(r'Transmission $\tau_{\mathrm{ph}}$',fontsize=12)
 	ax1.axvline(w_D*np.sqrt(9.375821464623672e+29)*h_bar/(1.60217656535E-22),ls="--", color="black")
-	ax1.set_ylim(10E-12,1)
+	ax1.set_ylim(10E-7,1)
 
 	ax2.plot(T,kappa)
 	ax2.set_xlabel('Temperature ($K$)',fontsize=12)
