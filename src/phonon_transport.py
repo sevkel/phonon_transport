@@ -20,7 +20,13 @@ import time
 import configparser
 from scipy import integrate
 
+#h_bar in Js
 h_bar = 1.0545718*10**(-34)
+eV2hartree = 0.0367493
+ang2bohr = 1.88973
+har2J = 4.35974E-18
+bohr2m = 5.29177E-11
+u2kg = 1.66054E-27
 
 def calculate_g0(w, w_D):
 	"""Calculates surface greens function according to Markussen, T. (2013). Phonon interference effects in molecular junctions. The Journal of chemical physics, 139(24), 244101 (https://doi.org/10.1063/1.4849178).
@@ -61,12 +67,12 @@ def calculate_Sigma(w,g0,gamma, M_L, M_C):
 	"""
 
 	#convert to hartree/Bohr**2
-	gamma = gamma * 0.010290855869847846
+	gamma_hb = gamma * (eV2hartree/ang2bohr**2)
 
 	M_L = top.atom_weight(M_L, u2kg=False)
 	M_C = top.atom_weight(M_C, u2kg=False)
 
-	gamma_prime = gamma/np.sqrt(M_C*M_L)
+	gamma_prime = gamma_hb/np.sqrt(M_C*M_L)
 
 	g = g0/(1+gamma_prime*g0)
 	sigma_nu = gamma_prime**2*g
@@ -95,9 +101,9 @@ def calculate_P(i,para):
 
 
 	#set up dynamical matrix K
-	K = top.create_dynamical_matrix(filename_hessian, filename_coord, t2SI=False)
+	D = top.create_dynamical_matrix(filename_hessian, filename_coord, t2SI=False)
 
-	n_atoms = int(K.shape[0]/3)
+	n_atoms = int(D.shape[0]/3)
 
 	"""
 	remover = np.zeros((len(eigenvalues),len(eigenvalues)))
@@ -115,25 +121,41 @@ def calculate_P(i,para):
 	else:
 		lower = 0
 
-	for n_l in n_l:
+	for n_l_ in n_l:
 		for u in range(lower,3):
-			sigma_L[n_l*3+u,n_l*3+u] = sigma[i]
-			#sigma_R[n_r*3+u][n_r*3+u] = sigma[i]
-	for n_r in n_r:
+			sigma_L[n_l_*3+u,n_l_*3+u] = sigma[i]
+	for n_r_ in n_r:
 		for u in range(lower,3):
-			#sigma_L[n_l*3+u][n_l*3+u] = sigma[i]
-			sigma_R[n_r*3+u,n_r*3+u] = sigma[i]
+			sigma_R[n_r_*3+u,n_r_*3+u] = sigma[i]
 	sigma_i = sigma[i]
 
 	#correct momentum conservation
-	gamma = gamma * 0.010290855869847846
+	#convert to hartree/Bohr**2
+	gamma_hb = gamma * eV2hartree/ang2bohr**2
 	for u in range(lower,3):
-		K[n_l*3+u][n_l*3+u]=(K[n_l*3+u][n_l*3+u]*top.atom_weight(M_C)-gamma)/top.atom_weight(M_C)
-		K[n_r*3+u][n_r*3+u]=(K[n_r*3+u][n_r*3+u]*top.atom_weight(M_C)-gamma)/top.atom_weight(M_C)
+		for n_l_ in n_l:
+			#remove mass weighting
+			K_ = D[n_l_*3+u][n_l_*3+u]*np.sqrt(top.atom_weight(M_C)*top.atom_weight(M_L))
+			#correct momentum
+			K_ = K_ - gamma_hb
+			#add mass weighting again
+			D_ = K_/np.sqrt(top.atom_weight(M_C)*top.atom_weight(M_L))
+			D[n_l_ * 3 + u][n_l_ * 3 + u] = D_
+
+		for n_r_ in n_r:
+			#remove mass weighting
+			K_ = D[n_r_*3+u][n_r_*3+u]*np.sqrt(top.atom_weight(M_C)*top.atom_weight(M_L))
+			#correct momentum
+			K_ = K_ - gamma
+			#add mass weighting again
+			D_ = K_/np.sqrt(top.atom_weight(M_C)*top.atom_weight(M_L))
+			D[n_r_ * 3 + u][n_r_ * 3 + u] = D_
+
+
 
 
 	#calculate greens function
-	G = np.linalg.inv(w[i]**2*np.identity(3*n_atoms)-K-sigma_L-sigma_R)
+	G = np.linalg.inv(w[i]**2*np.identity(3*n_atoms)-D-sigma_L-sigma_R)
 	Gamma_L = -2*np.imag(sigma_L)
 	Gamma_R = -2*np.imag(sigma_R)
 	P = np.real(np.trace(np.dot(np.dot(Gamma_L,G),np.dot(Gamma_R,np.conj(np.transpose(G))) )))
@@ -215,8 +237,9 @@ if __name__ == '__main__':
 
 	#convert to J
 	E_D = E_D*1.60217656535E-22
-	#convert to my units
+	#convert to 1/s
 	w_D = E_D/h_bar
+	#convert to har/(bohr**2*u)
 	w_D = w_D/np.sqrt(9.375821464623672e+29)
 
 
@@ -224,6 +247,13 @@ if __name__ == '__main__':
 	w = np.linspace(0.0,w_D*1.1,N)
 	i =np.linspace(0,N,N,False,dtype=int)
 	g0 = calculate_g0(w,w_D)
+	g0 = g0 - 1.j
+	fig, ax1 = plt.subplots()
+	ax1.plot(np.real(g0))
+	ax1.plot(np.imag(g0), color="red")
+	plt.grid()
+	plt.show()
+
 	Sigma = calculate_Sigma(w,g0,gamma,M_L,M_C)
 
 	Pv = list()
