@@ -3,6 +3,9 @@
     Author: Matthias Blaschke
     Python Version: 3.9
 """
+import codecs
+import configparser
+import sys
 
 import numpy as np
 from turbomoleOutputProcessing import turbomoleOutputProcessing as top
@@ -37,18 +40,35 @@ def calculate_kappa(tau_ph, E, T):
     return integral * prefactor
 
 if __name__ == '__main__':
-    #path to data
-    path = "C:/Users/Matthias Blaschke/OneDrive - Universität Augsburg/Promotion/phonon_transport/test/"
-    #filename of datafile
-    filename = "transp_benz_dia_au56_tips.dat"
-    pOPE3_hh_small_tips = top.read_plot_data(path + filename)[0]
+    config_path = sys.argv[1]
+    cfg = configparser.ConfigParser()
+    cfg.read_file(codecs.open(config_path, "r", "utf8"))
+
+    try:
+        data_path = str(cfg.get('Data Input', 'data_path'))
+        transp_name = str(cfg.get('Data Input', 'transp_name'))
+
+
+        # for thermal conducatance
+        T_min = float(cfg.get('Calculation', 'T_min'))
+        T_max = float(cfg.get('Calculation', 'T_max'))
+        kappa_grid_points = int(cfg.get('Calculation', 'kappa_grid_points'))
+
+    except configparser.NoOptionError:
+        print("Missing option in config file. Check config file!")
+        exit(-1)
+    except ValueError:
+        print("Wrong value in config file. Check config file!")
+        exit(-1)
+
+    transport = top.read_plot_data(data_path + "/" + transp_name)[0]
     #Energy must be in Hartree! -> Convert otherwise
-    E = np.asarray(pOPE3_hh_small_tips[0,:], dtype=np.float64)
-    thau_ph = np.asarray(pOPE3_hh_small_tips[1, :], dtype=np.float64)
+    E = np.asarray(transport[0,:], dtype=np.float64)
+    thau_ph = np.asarray(transport[1, :], dtype=np.float64)
 
     #Temperature range in Kelvin with given Resolution res
-    res = 1000
-    T = np.linspace(1, 400, res, dtype=np.float64)
+    res = kappa_grid_points
+    T = np.linspace(T_min, T_max, res, dtype=np.float64)
 
     kappa = list()
     for i in range(0, len(T)):
@@ -59,10 +79,15 @@ if __name__ == '__main__':
     kappa = kappa*har2pJ
 
     #save kappa data
-    top.write_plot_data(path + "kappa.dat", (T, kappa), "T [K], kappa [pW/K]")
+    top.write_plot_data(data_path + "/kappa.dat", (T, kappa), "T [K], kappa [pW/K]")
 
     #now plot everything
+    plt.tick_params(axis="x", labelsize=15)
+    plt.tick_params(axis="y", labelsize=15)
+    #plt.legend(fontsize=13)
+    plt.rc('xtick', labelsize=15)
     plt.plot(T, kappa)
-    plt.xlabel('Temperature ($K$)', fontsize=12)
-    plt.ylabel(r'Thermal Conductance $\mathrm{pw/K}$', fontsize=12)
+    plt.xlabel('Temperature ($K$)', fontsize=17)
+    plt.ylabel(r'Thermal Conductance $\mathrm{pw/K}$', fontsize=17)
+    plt.savefig(data_path + "/kappa.pdf", bbox_inches='tight')
     plt.show()

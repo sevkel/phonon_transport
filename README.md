@@ -1,13 +1,20 @@
 # Phonon Transport
-Calculated the phononic transport according to [[1]](#1).
+Calculates the phononic transport according to [[1]](#1).
 ## Requirements
 * Python 3.x
 * [TurbomoleOutputProcessing](https://topdocu.github.io/)
 
-## Usage
+
+##Calculation of phonon transmission
 ```` 
 python3 phonon_transport.py config_file
 ```` 
+###Preparation
+* Build molecule in Avogadro. Save as .xyz file 
+* Relaxation and hessian:
+    * Geometry optimization e.g. using xtb (https://xtb-docs.readthedocs.io/en/latest/optimization.html)
+    * Align molecule -> x axis through anchoring atoms (not hydrogen)
+    * Calculate hessian e.g using xtb (https://xtb-docs.readthedocs.io/en/latest/hessian.html)
 
 ### Config file
 ```` 
@@ -39,6 +46,29 @@ plot_g=True #plot surface green function
 * data_path/kappa.dat
 * data_path/transport.pdf
 * data_path/g0.pdf (optional, see plot_g)
+
+##Calculation of thermal conductance
+```` 
+python3 calculate_kappa config_file
+```` 
+Calculates thermal conductance from phonon transmission. Energy must be in Hartrees!
+###Config file
+A reduced config file is sufficient for this
+```` 
+[Data Input]
+data_path= #path where data is located
+transp_name= #name of file containing phonon transmission
+
+[Calculation]
+T_min= #lower bound for thermal conductance integral (avoid zero)
+T_max= #upper bound for thermal conductance integral
+kappa_grid_points= #number of grid point in thermal conductance integral
+````
+###Output
+* data_path/kappa.dat
+* data_path/kappa.pdf
+
+
 
 ## References
 <a id="1">[1]</a> 
