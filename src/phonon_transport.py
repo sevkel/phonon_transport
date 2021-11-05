@@ -21,7 +21,7 @@ import time
 import configparser
 import calculate_kappa as ck
 from scipy import integrate
-import ray
+
 
 #h_bar in Js
 h_bar = 1.0545718*10**(-34)
@@ -102,10 +102,10 @@ def calculate_P(i,para):
 	n_r = para[5]
 	gamma = para[6]
 	in_plane = para[7]
+	D = para[8]
 
 
-	#set up dynamical matrix K
-	D = top.create_dynamical_matrix(filename_hessian, filename_coord, t2SI=False)
+
 
 	n_atoms = int(D.shape[0]/3)
 
@@ -280,10 +280,12 @@ if __name__ == '__main__':
 
 
 	Sigma = calculate_Sigma(w,g0,gamma,M_L,M_C)
+	# set up dynamical matrix K
+	D = top.create_dynamical_matrix(filename_hessian, filename_coord, t2SI=False)
 
 	Pv = list()
 	p = Pool()
-	params = w,Sigma,filename_hessian,filename_coord,n_l,n_r,gamma,in_plane
+	params = w,Sigma,filename_hessian,filename_coord,n_l,n_r,gamma,in_plane,D
 	start = time.time()
 	result = map(partial(calculate_P, para=params), i)
 	stop = time.time()
