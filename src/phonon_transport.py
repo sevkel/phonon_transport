@@ -103,7 +103,7 @@ def calculate_P(i,para):
 	gamma = para[6]
 	in_plane = para[7]
 	D = para[8]
-	D = copy.deepcopy(D)
+	D = copy.copy(D)
 
 
 
