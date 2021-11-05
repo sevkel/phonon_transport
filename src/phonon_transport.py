@@ -10,7 +10,7 @@ import sys
 import numpy as np
 from scipy.linalg import eig
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from turbomoleOutputProcessing import turbomoleOutputProcessing as top
 import fnmatch
@@ -103,6 +103,7 @@ def calculate_P(i,para):
 	gamma = para[6]
 	in_plane = para[7]
 	D = para[8]
+	D = copy.deepcopy(D)
 
 
 
