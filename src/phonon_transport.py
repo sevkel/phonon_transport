@@ -21,6 +21,7 @@ import time
 import configparser
 import calculate_kappa as ck
 from scipy import integrate
+import ray
 
 #h_bar in Js
 h_bar = 1.0545718*10**(-34)
