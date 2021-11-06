@@ -6,6 +6,7 @@
 import codecs
 import copy
 import sys
+import json
 
 import numpy as np
 from scipy.linalg import eig
@@ -241,7 +242,7 @@ if __name__ == '__main__':
 		#Number of grid points
 		N = int(cfg.get('Calculation', 'N'))
 		#only in plane motion (-> set x and y coupling to zero)
-		in_plane = bool(cfg.get('Calculation', 'in_plane'))
+		in_plane = json.loads(str(cfg.get('Calculation', 'in_plane')).lower())
 
 		#for thermal conducatance
 		T_min = float(cfg.get('Calculation', 'T_min'))
@@ -249,7 +250,7 @@ if __name__ == '__main__':
 		kappa_grid_points = int(cfg.get('Calculation', 'kappa_grid_points'))
 
 		#check if g0 should be plotted
-		plot_g0 = bool(cfg.get('Data Output', 'plot_g'))
+		plot_g0 = json.loads(str(cfg.get('Data Output', 'plot_g')).lower())
 
 	except configparser.NoOptionError:
 		print("Missing option in config file. Check config file!")
