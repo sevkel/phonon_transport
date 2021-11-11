@@ -11,8 +11,10 @@ M_C=Au
 gamma=-1.401986386
 E_D=20
 N=500
-in_plane=False 
-T_min=5
+in_plane=False
+kappa_int_lower_E=0
+kappa_int_upper_E=0
+T_min=0.1
 T_max=400
 kappa_grid_points=1000
 

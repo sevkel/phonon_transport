@@ -313,7 +313,7 @@ if __name__ == '__main__':
 		kappa.append(ck.calculate_kappa(P_vals[1:len(P_vals)], E[1:len(E)], T[i])*har2pJ)
 
 	#save data
-	top.write_plot_data(data_path + "/phonon_trans.dat", (w, P_vals), "w (weird units), P_vals")
+	top.write_plot_data(data_path + "/phonon_trans.dat", (w, P_vals), "w (sqrt(har/(bohr**2*u))), P_vals")
 	top.write_plot_data(data_path + "/kappa.dat", (T, kappa), "T (K), kappa (pW/K)")
 
 	#now plot everything

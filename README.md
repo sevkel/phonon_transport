@@ -49,7 +49,7 @@ plot_g=True #plot surface green function
 
 ## Calculation of thermal conductance
 ```` 
-python3 calculate_kappa config_file
+python3 calculate_kappa.py config_file
 ```` 
 Calculates thermal conductance from phonon transmission. Energy must be in Hartrees!
 ### Config file
@@ -58,15 +58,22 @@ A reduced config file is sufficient for this
 [Data Input]
 data_path= #path where data is located
 transp_name= #name of file containing phonon transmission
+transp_units = [har],[sqrt(har/(bohr**2*u))] # hartree is default
 
 [Calculation]
+kappa_int_lower_E=0 #lower integral limit in kappa Energy integral in meV (optional, for further analysis). See commet below
+kappa_int_upper_E=5 #upper integral limit in kappa Energy integral in meV (optional, for further analysis). See comment below
 T_min= #lower bound for thermal conductance integral (avoid zero)
 T_max= #upper bound for thermal conductance integral
 kappa_grid_points= #number of grid point in thermal conductance integral
 ````
+If kappa_int_lower_E and kappa_int_upper_E are set, the cumulative thermal conductance $\kappa^{\mathrm{c}}_{\mathrm{ph}}$ is calculated with this integral limits at 300K.
+
 ### Output
 * data_path/kappa.dat
 * data_path/kappa.pdf
+* data_path/kappa_c.dat (optional)
+* data_path/kappa_c.pdf (optional)
 
 
 
