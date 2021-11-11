@@ -10,7 +10,7 @@ import sys
 import numpy as np
 from turbomoleOutputProcessing import turbomoleOutputProcessing as top
 import matplotlib
-#matplotlib.use('Agg') #for cluster usage!
+matplotlib.use('Agg') #for cluster usage!
 import matplotlib.pyplot as plt
 
 #h_bar in Js
