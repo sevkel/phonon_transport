@@ -111,14 +111,6 @@ def calculate_P(i,para):
 
 	n_atoms = int(D.shape[0]/3)
 
-	"""
-	remover = np.zeros((len(eigenvalues),len(eigenvalues)))
-	for i in range(0,6):
-		#print(i)
-		remover += eigenvalues[i]*np.outer(np.transpose(eigenvectors[:,i]),eigenvectors[:,i])/np.sqrt(np.dot(eigenvectors[:,i],eigenvectors[:,i]))
-	K=K-remover
-	"""
-
 	#set up self energies
 	sigma_L = np.zeros((n_atoms*3,n_atoms*3), complex)
 	sigma_R = np.zeros((n_atoms*3,n_atoms*3), complex)
@@ -139,7 +131,6 @@ def calculate_P(i,para):
 	#convert to hartree/Bohr**2
 	gamma_hb = gamma * eV2hartree/ang2bohr**2
 
-	D_save = copy.deepcopy(D)
 	for u in range(lower,3):
 		for n_l_ in n_l:
 			#remove mass weighting
@@ -158,20 +149,7 @@ def calculate_P(i,para):
 			#add mass weighting again
 			D_ = K_/top.atom_weight(M_C)
 			D[n_r_ * 3 + u][n_r_ * 3 + u] = D_
-		#"""
-	"""
-	n_l = n_l[0]
-	n_r = n_r[0]
-	D[n_l * 3 + u][n_l * 3 + u] = (D[n_l * 3 + u][n_l * 3 + u] * top.atom_weight(M_C) - gamma_hb) / top.atom_weight(
-		M_C)
-	D[n_r * 3 + u][n_r * 3 + u] = (D[n_r * 3 + u][n_r * 3 + u] * top.atom_weight(M_C) - gamma_hb) / top.atom_weight(
-		M_C)
-	"""
 
-
-
-	#extra broadening
-	eta = np.full((n_atoms*3, n_atoms*3), 1.j*1E-8)
 
 	#calculate greens function
 	G = np.linalg.inv(w[i]**2*np.identity(3*n_atoms)-D-sigma_L-sigma_R)
