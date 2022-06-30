@@ -18,5 +18,10 @@ T_min=0.1
 T_max=400
 kappa_grid_points=1000
 
+[Eigenchannel]
+eigenchannel=True
+every_nth=1 (for all, -1 for none)
+channel_max=3
+
 [Data Output]
 plot_g=False

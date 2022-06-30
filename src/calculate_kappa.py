@@ -12,6 +12,8 @@ from turbomoleOutputProcessing import turbomoleOutputProcessing as top
 import matplotlib
 matplotlib.use('Agg') #for cluster usage!
 import matplotlib.pyplot as plt
+from numpy import inf
+
 
 #h_bar in Js
 h_bar = 1.0545718*10**(-34)
@@ -40,8 +42,11 @@ def calculate_kappa(tau_ph, E, T):
     k_B = 3.167*10**(-6)
 
     prefactor = 1./(h*k_B*T**2)
+
     beta = 1/(k_B*T)
     exp_ = np.exp(E*beta)
+    #can be replaced because contribution is zuro in integrand (limits of exp)
+    exp_[exp_ == inf] = 0
     integrand = E ** 2 * tau_ph * exp_ / ((exp_ - 1) ** 2)
 
     integral = np.trapz(integrand, E)

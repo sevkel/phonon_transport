@@ -5,6 +5,7 @@
 '''
 import codecs
 import copy
+import os.path
 import sys
 import json
 
@@ -21,7 +22,7 @@ from functools import partial
 import time
 import configparser
 import calculate_kappa as ck
-from scipy import integrate
+from utils import eigenchannel_utils as eu
 
 
 #h_bar in Js
@@ -84,7 +85,7 @@ def calculate_Sigma(w,g0,gamma, M_L, M_C):
 
 	return sigma_nu
 
-def calculate_P(i,para):
+def calculate_T(i,para):
 	"""Calculates Greens Function with given parameters at given frequency w.
 
 	Args:
@@ -92,22 +93,22 @@ def calculate_P(i,para):
 		para: (tuple): frequency w (array), self energy sigma (complex), filename_hessian (str), filename_coord (str), left atom for transport calculation n_l (int), right atom for transport calculation n_r (int), coupling constant Gamma (complex), in_plane (boolean)
 
 	Returns:
-		P (array_like): phonon transmission
+		T (array_like): phonon transmission
 	"""
 
 	w = para[0]
 	sigma = para[1]
-	filename_hessian = para[2]
-	filename_coord = para[3]
+	data_path = para[2]
+	coord = para[3]
 	n_l = para[4]
 	n_r = para[5]
 	gamma = para[6]
 	in_plane = para[7]
 	D = para[8]
 	D = copy.copy(D)
-
-
-
+	eigenchannel = para[9]
+	every_nth = para[10]
+	channel_max = para[11]
 
 	n_atoms = int(D.shape[0]/3)
 
@@ -155,41 +156,69 @@ def calculate_P(i,para):
 	G = np.linalg.inv(w[i]**2*np.identity(3*n_atoms)-D-sigma_L-sigma_R)
 	Gamma_L = -2*np.imag(sigma_L)
 	Gamma_R = -2*np.imag(sigma_R)
-	P = np.real(np.trace(np.dot(np.dot(Gamma_L,G),np.dot(Gamma_R,np.conj(np.transpose(G))) )))
-	return P
+	trans_prob_matrix=np.dot(np.dot(Gamma_L,G),np.dot(Gamma_R,np.conj(np.transpose(G))) )
+
+	if(eigenchannel==True):
+		write_out = False
+		energy = -1
+		if(i%every_nth==0 and every_nth!=-1):
+			write_out = True
+			energy = np.round(w[i]*np.sqrt(9.375821464623672e+29)*h_bar/(1.60217656535E-22),3)
+
+		T, T_channel = calc_eigenchannel(trans_prob_matrix, data_path, channel_max, coord, write_out, energy)
+		return T, T_channel
+	else:
+		T = np.real(np.trace(trans_prob_matrix))
+		return T
 
 
-def calculate_kappa(P,w, T):
-	"""Calculates Thermal conductance up to given Temperature
-	Args:
-		P: (array_like): Phonon transmission
-		w: (array_like): frequency in atomic units
-		T: (float): Temperature in Kelvin
-
-	Returns:
-		kappa (float) Thermal conductance
+def calc_eigenchannel(trans_prob_matrix, calc_path, channel_max, coord, write_out, energy):
 	"""
-	w_si=w*np.sqrt(9.375821464623672e+29)
-	#Boltzmann constant in Si units
-	k_B=1.38064852*10E-23
-	factor = np.sqrt(9.375821464623672e+29)*h_bar/k_B
-	#print("factor " +str(factor))
-	prefactor = h_bar**2/(2*np.pi*k_B*T**2)*9.375821464623672e+29*np.sqrt(9.375821464623672e+29)*1E12
-	#print(prefactor)
-	kappa = list()
-	exp = np.exp((w)/(T)*factor)
-	#print(T)
-	#print(exp)
+	Calculates phonon transmission eigenchannels according to Klöckner, J. C., Cuevas, J. C., & Pauly, F. (2018). Transmission eigenchannels for coherent phonon transport. Physical Review B, 97(15), 155432 (https://doi.org/10.1103/PhysRevB.97.155432)
+	Args:
+		trans_prob_matrix (np.ndarray): Transmission prob matrix (eq 25 in ref)
+		calc_path (String): path to calculation
+		channel_max (int): number of stored eigenvaues
+		coord (array): coord file loaded with top
+		write_out (bool): write channel information
+		energy (float): Phonon energy in meV (for filename)
 
-	#print(exp)
+	Returns: T, T_vals: Total transmission, Contribution of each channel (up to channel_max)
 
-	integrand= w**2*P*exp/((exp-1)**2)
-	#print(integrand)
-	#integral = np.cumsum(integrand)[-1]
-	integral = np.trapz(integrand, w)
+	"""
 
-	return integral*prefactor
+	eigenvalues, eigenvectors = np.linalg.eigh(trans_prob_matrix)
+	#sort eigenvalues and eigenvecors
+	idx = eigenvalues.argsort()[::-1]
+	eigenvalues = eigenvalues[idx]
+	eigenvectors = eigenvectors[:, idx]
 
+	def calc_displacement(z_value):
+		#z_value = eigenvectors[i, j]
+		z_abs=np.abs(z_value)
+		if (z_abs) > 0:
+			phase = np.arccos(np.real(z_value) / z_abs)
+			if (np.imag(z_value) <= 0):
+				phase = 2.0*np.pi - phase
+		else:
+			phase = 0
+		#real part
+		displacement = z_abs * np.cos(phase)
+
+		return displacement
+
+
+	#calc displacement
+	calc_func = np.vectorize(calc_displacement)
+	displacement_matrix = calc_func(eigenvectors)
+	if(write_out == True):
+		if(os.path.exists(calc_path+ "/eigenchannels") == False):
+			os.mkdir(f"{calc_path}/eigenchannels")
+		eu.write_nmd_file(f"{calc_path}/eigenchannels/eigenchannel_{energy}.nmd",coord, displacement_matrix, channel_max)
+
+	#calculate Transmission
+	T = np.sum(eigenvalues)
+	return T, eigenvalues[0:channel_max]
 
 
 if __name__ == '__main__':
@@ -227,11 +256,23 @@ if __name__ == '__main__':
 		T_max = float(cfg.get('Calculation', 'T_max'))
 		kappa_grid_points = int(cfg.get('Calculation', 'kappa_grid_points'))
 
+		#check if eigenchannel should be calculated. But first check if section exists -> backward compatibility
+		if(cfg.has_option('Eigenchannel', 'eigenchannel')):
+			eigenchannel = json.loads(str(cfg.get('Eigenchannel', 'eigenchannel')).lower())
+			every_nth = int(cfg.get('Eigenchannel', 'every_nth'))
+			channel_max = int(cfg.get('Eigenchannel', 'channel_max'))
+		else:
+			eigenchannel = False
+			every_nth = None
+
 		#check if g0 should be plotted
 		plot_g0 = json.loads(str(cfg.get('Data Output', 'plot_g')).lower())
 
-	except configparser.NoOptionError:
-		print("Missing option in config file. Check config file!")
+
+
+
+	except configparser.NoOptionError as e:
+		print(f"Missing option in config file. Check config file! {e}")
 		exit(-1)
 	except ValueError:
 		print("Wrong value in config file. Check config file!")
@@ -262,25 +303,31 @@ if __name__ == '__main__':
 	Sigma = calculate_Sigma(w,g0,gamma,M_L,M_C)
 	# set up dynamical matrix K
 	D = top.create_dynamical_matrix(filename_hessian, filename_coord, t2SI=False)
+	coord = top.read_coord_file(filename_coord)
 
 	Pv = list()
 	p = Pool()
-	params = w,Sigma,filename_hessian,filename_coord,n_l,n_r,gamma,in_plane,D
-	start = time.time()
-	result = map(partial(calculate_P, para=params), i)
-	stop = time.time()
-	start = time.time()
-	print("calculated in " + str(stop-start))
-	P_vals = list()
-	for P in result:
-		P_vals.append(P)
-	P_vals = np.asarray(P_vals)
-	stop = time.time()
+	params = w,Sigma,data_path,coord,n_l,n_r,gamma,in_plane,D,eigenchannel,every_nth,channel_max
+	result = map(partial(calculate_T, para=params), i)
 
-	print("transformed in " + str(stop-start))
+	#Total transmission
+	T_vals = list()
+	#Transmission contribution for the firt channel_max channels
+	T_c_vals = list()
+	if(eigenchannel == False):
+		for T in result:
+			T_vals.append(T)
+		T_vals = np.asarray(T_vals)
+	else:
+		for T, T_c in result:
+			T_vals.append(T)
+			T_c_vals.append(T_c)
+
+	T_vals = np.asarray(T_vals)
+	T_c_vals = np.reshape(T_c_vals, (len(T_vals), channel_max))
 
 	T=np.linspace(T_min,T_max,kappa_grid_points)
-	#w_int = np.linspace(0.000,w_D*100,N*100)
+
 	kappa=list()
 	#w to SI
 	w_kappa = w*np.sqrt(9.375821464623672e+29)
@@ -288,28 +335,47 @@ if __name__ == '__main__':
 	#joule to hartree
 	E = E/har2J
 	for i in range(0,len(T)):
-		kappa.append(ck.calculate_kappa(P_vals[1:len(P_vals)], E[1:len(E)], T[i])*har2pJ)
+		kappa.append(ck.calculate_kappa(T_vals[1:len(T_vals)], E[1:len(E)], T[i]) * har2pJ)
 
 	#save data
-	top.write_plot_data(data_path + "/phonon_trans.dat", (w, P_vals), "w (sqrt(har/(bohr**2*u))), P_vals")
+	top.write_plot_data(data_path + "/phonon_trans.dat", (w, T_vals), "w (sqrt(har/(bohr**2*u))), P_vals")
 	top.write_plot_data(data_path + "/kappa.dat", (T, kappa), "T (K), kappa (pW/K)")
 
 	#now plot everything
 	E = w*np.sqrt(9.375821464623672e+29)*h_bar/(1.60217656535E-22)
 	fig,(ax1,ax2) = plt.subplots(2,1)
 	fig.tight_layout()
-	ax1.plot(E,P_vals)
+	ax1.plot(E, T_vals)
 	ax1.set_yscale('log')
 	ax1.set_xlabel('Phonon Energy ($\mathrm{meV}$)',fontsize=12)
 	ax1.set_ylabel(r'Transmission $\tau_{\mathrm{ph}}$',fontsize=12)
 	ax1.axvline(w_D*np.sqrt(9.375821464623672e+29)*h_bar/(1.60217656535E-22),ls="--", color="black")
-	ax1.set_ylim(10E-7,1)
+	ax1.set_ylim(10E-7,2)
 
 	ax2.plot(T,kappa)
 	ax2.set_xlabel('Temperature ($K$)',fontsize=12)
 	ax2.set_ylabel(r'Thermal Conductance $\mathrm{pw/K}$',fontsize=12)
+	plt.rc('xtick', labelsize=12)
+	plt.rc('ytick', labelsize=12)
 	plt.savefig(data_path + "/transport.pdf", bbox_inches='tight')
-	plt.show()
+
+	plt.clf()
+
+	if(eigenchannel == True):
+		#top.write_plot_data(data_path + "/transmission_channels.dat", (T, T_val_tuple), "T (K), T_c")
+		fig, ax = plt.subplots()
+		for i in range(T_c_vals.shape[1]):
+			ax.plot(E, T_c_vals[:,i], label=i+1)
+		ax.set_yscale('log')
+		ax.set_xlabel('Phonon Energy ($\mathrm{meV}$)', fontsize=12)
+		ax.set_ylabel(r'Transmission $\tau_{\mathrm{ph}}$', fontsize=12)
+		ax.axvline(w_D * np.sqrt(9.375821464623672e+29) * h_bar / (1.60217656535E-22), ls="--", color="black")
+		ax.axhline(1, ls="--", color="black")
+		plt.rc('xtick', labelsize=12)
+		plt.rc('ytick', labelsize=12)
+		plt.legend(fontsize=12)
+		plt.savefig(data_path + "/transport_channels.pdf", bbox_inches='tight')
+
 
 
 

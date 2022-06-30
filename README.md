@@ -13,7 +13,7 @@ python3 phonon_transport.py config_file
 * Build molecule in Avogadro. Save as .xyz file 
 * Relaxation and hessian:
     * Geometry optimization e.g. using xtb (https://xtb-docs.readthedocs.io/en/latest/optimization.html)
-    * Align molecule -> x axis through anchoring atoms (not hydrogen)
+    * Align molecule -> x axis through anchoring atoms (not hydrogen). Important if in_plane option is used
     * Calculate hessian e.g using xtb (https://xtb-docs.readthedocs.io/en/latest/hessian.html)
 
 ### Config file
@@ -36,6 +36,11 @@ T_min= #lower bound for thermal conductance integral (avoid zero)
 T_max= #upper bound for thermal conductance integral
 kappa_grid_points= #number of grid point in thermal conductance integral
 
+[Eigenchannel]
+eigenchannel=True (True: Eigenchannels are calculated. See comment)
+every_nth=1 (for all, -1 for none. Specifies number of plotted eigenchannels in data_path/transport_channels.pdf)
+channel_max=3 (number of plotted and stored eigenchannels. All channels are calculated)
+
 [Data Output]
 plot_g=True #plot surface green function 
 
@@ -46,12 +51,29 @@ plot_g=True #plot surface green function
 * data_path/kappa.dat
 * data_path/transport.pdf
 * data_path/g0.pdf (optional, see plot_g)
+* data_path/transport_channels.pdf (optional, see Eigenchannel)
+* data_path/transport_channels.dat (NOT IMPLEMENTED YET, see Eigenchannel)
+* data_path/eigenchannels/*.nmd (optional, see Eigenchannel)
 
-## Calculation of thermal conductance
+> **_NOTE:_**  transport_channels.dat not implemented yet.
+
+### Calculation of Eigenchannels
+If eigenchannel=True is set, the transmission eigenchannels according to  [[2]](#1) are calculated. The total transmission is then calculated as sum over all eigenchannels. The first channel_max channels are plotted in data_path/transport_channels.pdf. every_nth specifies which eigenchannels are written to *nmd file. 
+
+### Calculation of Propagator elements
+> **_NOTE:_**  Not implemented yet.
+
+### Calculation of Participation Ratio
+> **_NOTE:_**  Not implemented yet.
+
+## Calculation of thermal conductance (Standalone)
+### Usage
 ```` 
 python3 calculate_kappa.py config_file
 ```` 
 Calculates thermal conductance from phonon transmission. Energy must be in Hartrees!
+### Preperation
+Transport calculation for transmission (does not necessarily have to be calculated with this program)
 ### Config file
 A reduced config file is sufficient for this
 ```` 
@@ -75,14 +97,33 @@ If kappa_int_lower_E and kappa_int_upper_E are set, the cumulative thermal condu
 * data_path/kappa_c.dat (optional)
 * data_path/kappa_c.pdf (optional)
 
+## Calculation of Phonon Eigenchannels (Standalone)
+> **_NOTE:_**  Not implemented yet.
+
+
+## Planned features
+* Eigenchannel
+  * .g98 files for Eigenchannels
+  * Calculation of Phonon Eigenchannels (Standalone)
+  * Writeout of eigenchannel data
+  
+* Multiple electrode models
+* Database for coupling parameters or more consistent calculation
+* Example files
+* Writeout of propagator elements
+* Writeout of Participation ratio
+
 
 
 ## References
 <a id="1">[1]</a> 
-Markussen, T. (2013).  
+Markussen, T. (2013).
 Phonon interference effects in molecular junctions. 
 The Journal of chemical physics, 139(24), 244101.
-[https://doi.org/10.1063/1.4849178]( https://doi.org/10.1063/1.4849178)
+[https://doi.org/10.1063/1.4849178](https://doi.org/10.1063/1.4849178) \
+<a id="1">[2]</a> 
+Klöckner, J. C., Cuevas, J. C., & Pauly, F. (2018). Transmission eigenchannels for coherent phonon transport. Physical Review B, 97(15), 155432.
+[https://doi.org/10.1103/PhysRevB.97.155432](https://doi.org/10.1103/PhysRevB.97.155432)
 
 ***
 Matthias Blaschke [matthias.blaschke@physik.uni-augsburg.de](matthias.blaschke@pyhsik.uni-augsburg.de)
