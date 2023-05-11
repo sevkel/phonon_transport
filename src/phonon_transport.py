@@ -264,6 +264,7 @@ if __name__ == '__main__':
 		else:
 			eigenchannel = False
 			every_nth = None
+			channel_max = -1
 
 		#check if g0 should be plotted
 		plot_g0 = json.loads(str(cfg.get('Data Output', 'plot_g')).lower())
