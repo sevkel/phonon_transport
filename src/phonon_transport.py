@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 from turbomoleOutputProcessing import turbomoleOutputProcessing as top
 import fnmatch
 import scipy.signal
-from multiprocessing import Pool
 from functools import partial
 import time
 import configparser
@@ -307,7 +306,6 @@ if __name__ == '__main__':
 	coord = top.read_coord_file(filename_coord)
 
 	Pv = list()
-	p = Pool()
 	params = w,Sigma,data_path,coord,n_l,n_r,gamma,in_plane,D,eigenchannel,every_nth,channel_max
 	result = map(partial(calculate_T, para=params), i)
 
