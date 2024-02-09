@@ -10,15 +10,12 @@ import sys
 import json
 
 import numpy as np
-from scipy.linalg import eig
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from turbomoleOutputProcessing import turbomoleOutputProcessing as top
-import fnmatch
+import tmoutproc as top
 import scipy.signal
 from functools import partial
-import time
 import configparser
 import calculate_kappa as ck
 from utils import eigenchannel_utils as eu
@@ -32,6 +29,7 @@ har2J = 4.35974E-18
 bohr2m = 5.29177E-11
 u2kg = 1.66054E-27
 har2pJ = 4.35974e-6
+conversion = 9.375821464623672e+29
 
 def calculate_g0(w, w_D):
 	"""Calculates surface greens function according to Markussen, T. (2013). Phonon interference effects in molecular junctions. The Journal of chemical physics, 139(24), 244101 (https://doi.org/10.1063/1.4849178).
@@ -162,7 +160,7 @@ def calculate_T(i,para):
 		energy = -1
 		if(i%every_nth==0 and every_nth!=-1):
 			write_out = True
-			energy = np.round(w[i]*np.sqrt(9.375821464623672e+29)*h_bar/(1.60217656535E-22),3)
+			energy = np.round(w[i]*np.sqrt(conversion)*h_bar/(1.60217656535E-22),3)
 
 		T, T_channel = calc_eigenchannel(trans_prob_matrix, data_path, channel_max, coord, write_out, energy)
 		return T, T_channel
@@ -283,7 +281,7 @@ if __name__ == '__main__':
 	#convert to 1/s
 	w_D = E_D/h_bar
 	#convert to har/(bohr**2*u)
-	w_D = w_D/np.sqrt(9.375821464623672e+29)
+	w_D = w_D/np.sqrt(conversion)
 
 
 
@@ -329,7 +327,7 @@ if __name__ == '__main__':
 
 	kappa=list()
 	#w to SI
-	w_kappa = w*np.sqrt(9.375821464623672e+29)
+	w_kappa = w*np.sqrt(conversion)
 	E = h_bar*w_kappa
 	#joule to hartree
 	E = E/har2J
@@ -341,14 +339,14 @@ if __name__ == '__main__':
 	top.write_plot_data(data_path + "/kappa.dat", (T, kappa), "T (K), kappa (pW/K)")
 
 	#now plot everything
-	E = w*np.sqrt(9.375821464623672e+29)*h_bar/(1.60217656535E-22)
+	E = w*np.sqrt(conversion)*h_bar/(1.60217656535E-22)
 	fig,(ax1,ax2) = plt.subplots(2,1)
 	fig.tight_layout()
 	ax1.plot(E, T_vals)
 	ax1.set_yscale('log')
 	ax1.set_xlabel('Phonon Energy ($\mathrm{meV}$)',fontsize=12)
 	ax1.set_ylabel(r'Transmission $\tau_{\mathrm{ph}}$',fontsize=12)
-	ax1.axvline(w_D*np.sqrt(9.375821464623672e+29)*h_bar/(1.60217656535E-22),ls="--", color="black")
+	ax1.axvline(w_D*np.sqrt(conversion)*h_bar/(1.60217656535E-22),ls="--", color="black")
 	ax1.set_ylim(10E-7,2)
 
 	ax2.plot(T,kappa)
@@ -361,14 +359,13 @@ if __name__ == '__main__':
 	plt.clf()
 
 	if(eigenchannel == True):
-		#top.write_plot_data(data_path + "/transmission_channels.dat", (T, T_val_tuple), "T (K), T_c")
 		fig, ax = plt.subplots()
 		for i in range(T_c_vals.shape[1]):
 			ax.plot(E, T_c_vals[:,i], label=i+1)
 		ax.set_yscale('log')
 		ax.set_xlabel('Phonon Energy ($\mathrm{meV}$)', fontsize=12)
 		ax.set_ylabel(r'Transmission $\tau_{\mathrm{ph}}$', fontsize=12)
-		ax.axvline(w_D * np.sqrt(9.375821464623672e+29) * h_bar / (1.60217656535E-22), ls="--", color="black")
+		ax.axvline(w_D * np.sqrt(conversion) * h_bar / (1.60217656535E-22), ls="--", color="black")
 		ax.axhline(1, ls="--", color="black")
 		plt.rc('xtick', labelsize=12)
 		plt.rc('ytick', labelsize=12)

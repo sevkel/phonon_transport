@@ -8,7 +8,7 @@ import configparser
 import sys
 
 import numpy as np
-from turbomoleOutputProcessing import turbomoleOutputProcessing as top
+import tmoutproc as top
 import matplotlib
 matplotlib.use('Agg') #for cluster usage!
 import matplotlib.pyplot as plt
@@ -78,7 +78,7 @@ if __name__ == '__main__':
         print("Wrong value in config file. Check config file!")
         exit(-1)
 
-    transport = top.read_plot_data(data_path + "/" + transp_name)[0]
+    transport = top.read_plot_data(data_path + "/" + transp_name)
 
     #Temperature range in Kelvin with given Resolution res
     res = kappa_grid_points

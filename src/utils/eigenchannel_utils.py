@@ -1,5 +1,5 @@
 import numpy as np
-from turbomoleOutputProcessing import  turbomoleOutputProcessing as top
+import  tmoutproc as top
 
 def write_g98_file(filename, coord, displacement_matrix):
     #TODO: Check
@@ -65,9 +65,9 @@ def write_nmd_file(filename, coord, displacement_matrix, n_channel_max):
         factor = 1 / np.sqrt(top.atom_weight(atomic_type))
         mass_scaling.append(factor)
 
-        x = float(coord[i][0]) * bohr2ang
-        y = float(coord[i][1]) * bohr2ang
-        z = float(coord[i][2]) * bohr2ang
+        x = float(coord[0,i]) * bohr2ang
+        y = float(coord[1,i]) * bohr2ang
+        z = float(coord[2,i]) * bohr2ang
         atom_string += atomic_type.upper() + " "
         coordinate_string += str(x) + " " + str(y) + " " + str(z) + " "
     for i in range(0, n_channel_max):
