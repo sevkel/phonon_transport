@@ -2,9 +2,7 @@
 Calculates the phononic transport according to [[1]](#1).
 ## Requirements
 * Python 3.x
-* [tmoutproc](
-* 
-  )
+* [tmoutproc](https://github.com/blaschma/tmoutproc/)
 
 
 ## Calculation of phonon transmission
