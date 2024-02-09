@@ -2,7 +2,9 @@
 Calculates the phononic transport according to [[1]](#1).
 ## Requirements
 * Python 3.x
-* [TurbomoleOutputProcessing](https://topdocu.github.io/)
+* [tmoutproc](
+* 
+  )
 
 
 ## Calculation of phonon transmission
