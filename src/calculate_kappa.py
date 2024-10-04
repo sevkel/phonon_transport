@@ -70,6 +70,7 @@ if __name__ == '__main__':
         T_min = float(cfg.get('Calculation', 'T_min'))
         T_max = float(cfg.get('Calculation', 'T_max'))
         kappa_grid_points = int(cfg.get('Calculation', 'kappa_grid_points'))
+        T_kappa_c = float(cfg.get('Calculation', 'T_kappa_c', fallback=300))
 
     except configparser.NoOptionError:
         print("Missing option in config file. Check config file!")
@@ -107,7 +108,7 @@ if __name__ == '__main__':
         for i in range(E_min_index, E_max_index):
             E_i = E[E_min_index:i]
             thau_ph = np.asarray(transport[1, :][E_min_index:i], dtype=np.float64)
-            T = 300
+            T = T_kappa_c
             kappa.append(calculate_kappa(thau_ph, E_i, T))
         kappa = np.asarray(kappa)
     else:

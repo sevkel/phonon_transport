@@ -35,6 +35,7 @@ in_plane=False #in_plane option from [Phonon interference effects in molecular j
 T_min= #lower bound for thermal conductance integral (avoid zero)
 T_max= #upper bound for thermal conductance integral
 kappa_grid_points= #number of grid point in thermal conductance integral
+T_kappa_c= #temperature at which kumulative thermal conductance is calculated
 
 [Eigenchannel]
 eigenchannel=True (True: Eigenchannels are calculated. See comment)
