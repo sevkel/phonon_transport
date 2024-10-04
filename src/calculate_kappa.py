@@ -13,6 +13,12 @@ import matplotlib
 matplotlib.use('Agg') #for cluster usage!
 import matplotlib.pyplot as plt
 from numpy import inf
+import scienceplots
+
+plt.style.use(['science','no-latex'])
+plt.rc('xtick', labelsize=14)
+plt.rc('ytick', labelsize=14)
+plt.rc('axes', labelsize=16)
 
 
 #h_bar in Js
@@ -99,6 +105,9 @@ if __name__ == '__main__':
 
     E = np.asarray(transport[0, :][1:len(transport[0, :])]*conv_factor, dtype=np.float64)
     kappa = list()
+    kappa_ch1 = list()
+    kappa_ch2 = list()
+    kappa_ch3 = list()
 
     if(kappa_int_lower_E != -1 and kappa_int_upper_E !=-1):
         E_lower = kappa_int_lower_E / har2meV
@@ -107,15 +116,27 @@ if __name__ == '__main__':
         E_max_index = np.abs(E - E_upper).argmin()
         for i in range(E_min_index, E_max_index):
             E_i = E[E_min_index:i]
-            thau_ph = np.asarray(transport[1, :][E_min_index:i], dtype=np.float64)
+            tau_ph = np.asarray(transport[1, :][E_min_index:i], dtype=np.float64)
+            tau_ph_ch1 = np.asarray(transport[2, :][E_min_index:i], dtype=np.float64)
+            tau_ph_ch2 = np.asarray(transport[3, :][E_min_index:i], dtype=np.float64)
+            tau_ph_ch3 = np.asarray(transport[4, :][E_min_index:i], dtype=np.float64)
             T = T_kappa_c
-            kappa.append(calculate_kappa(thau_ph, E_i, T))
+            kappa.append(calculate_kappa(tau_ph, E_i, T))
+            #if transport contains channel resolved data
+            if transport.shape[0]>2:
+                kappa_ch1.append(calculate_kappa(tau_ph_ch1, E_i, T))
+                kappa_ch2.append(calculate_kappa(tau_ph_ch2, E_i, T))
+                kappa_ch3.append(calculate_kappa(tau_ph_ch3, E_i, T))
         kappa = np.asarray(kappa)
+        if transport.shape[0] > 2:
+            kappa_ch1 = np.asarray(kappa_ch1)
+            kappa_ch2 = np.asarray(kappa_ch2)
+            kappa_ch3 = np.asarray(kappa_ch3)
     else:
-        thau_ph = np.asarray(transport[1, :][1:len(transport[1, :])], dtype=np.float64)
+        tau_ph = np.asarray(transport[1, :][1:len(transport[1, :])], dtype=np.float64)
 
         for i in range(0, len(T)):
-            kappa.append(calculate_kappa(thau_ph, E, T[i]))
+            kappa.append(calculate_kappa(tau_ph, E, T[i]))
         kappa = np.asarray(kappa)
 
     har2pJ = 4.35974e-6
@@ -126,20 +147,37 @@ if __name__ == '__main__':
     plt.tick_params(axis="y", labelsize=15)
     #plt.legend(fontsize=13)
     plt.rc('xtick', labelsize=15)
-
+    fig, ax = plt.subplots(figsize=(6, 4))
     if(kappa_int_lower_E == -1):
-        plt.ylabel(r'$\kappa_{\mathrm{ph}}$ ($\mathrm{pw/K}$)', fontsize=17)
-        plt.plot(T, kappa)
-        plt.xlabel('Temperature ($K$)', fontsize=17)
+        ax.ylabel(r'$\kappa_{\mathrm{ph}}$ ($\mathrm{pw/K}$)', fontsize=17)
+        ax.plot(T, kappa)
+        ax.xlabel('Temperature ($K$)', fontsize=17)
         # save kappa data
         top.write_plot_data(data_path + "/kappa.dat", (T, kappa), "T [K], kappa [pW/K]")
         plt.savefig(data_path + "/kappa.pdf", bbox_inches='tight')
     else:
         plt.ylabel(r'$\kappa^{\mathrm{c}}_{\mathrm{ph}}$ ($\mathrm{pw/K}$)', fontsize=17)
 
-        plt.plot(E[E_min_index:E_max_index]*har2meV, kappa)
+        ax.plot(E[E_min_index:E_max_index]*har2meV, kappa)
         plt.xlabel('Energy ($\mathrm{meV}$)',fontsize=17)
-        # save kappa data
-        top.write_plot_data(data_path + "/kappa_c.dat", (E[E_min_index:E_max_index], kappa), "E [har], kappa [pW/K]" + str(kappa_int_lower_E) + "->" + str(kappa_int_upper_E))
+
         plt.savefig(data_path + "/kappa_c.pdf", bbox_inches='tight')
+        #plt.clf()
+
+        if len(kappa_ch1)>0:
+            ax.plot(E[E_min_index:E_max_index] * har2meV, kappa, label="Total")
+            ax.plot(E[E_min_index:E_max_index] * har2meV, kappa_ch1*har2pJ, label="Ch 1")
+            ax.plot(E[E_min_index:E_max_index] * har2meV, kappa_ch2*har2pJ, label="Ch 2")
+            ax.plot(E[E_min_index:E_max_index] * har2meV, kappa_ch3*har2pJ, label="Ch 3")
+            ax.set_ylabel(r'$\kappa^{\mathrm{c}}_{\mathrm{ph}}$ ($\mathrm{pw/K}$)', fontsize=17)
+            ax.set_xlabel('Energy ($\mathrm{meV}$)', fontsize=17)
+            plt.legend()
+            plt.grid(which="both")
+            plt.savefig(data_path + "/kappa_c_ch.pdf", bbox_inches='tight')
+
+            top.write_plot_data(data_path + "/kappa_c.dat", (E[E_min_index:E_max_index], kappa, kappa_ch1, kappa_ch2, kappa_ch3),
+                                "E [har], kappa [pW/K] (total, ch1, ch2, ch3)" + str(kappa_int_lower_E) + "->" + str(kappa_int_upper_E) + f" at {T_kappa_c=}K")
+        else:
+            top.write_plot_data(data_path + "/kappa_c.dat", (E[E_min_index:E_max_index], kappa), "E [har], kappa [pW/K]" + str(kappa_int_lower_E) + "->" + str(kappa_int_upper_E) + f"at {T_kappa_c=}K")
+
     plt.show()
