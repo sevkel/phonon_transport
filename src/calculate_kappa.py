@@ -149,17 +149,17 @@ if __name__ == '__main__':
     plt.rc('xtick', labelsize=15)
     fig, ax = plt.subplots(figsize=(6, 4))
     if(kappa_int_lower_E == -1):
-        ax.ylabel(r'$\kappa_{\mathrm{ph}}$ ($\mathrm{pw/K}$)', fontsize=17)
+        ax.set_ylabel(r'$\kappa_{\mathrm{ph}}$ ($\mathrm{pw/K}$)', fontsize=17)
         ax.plot(T, kappa)
-        ax.xlabel('Temperature ($K$)', fontsize=17)
+        ax.set_xlabel('Temperature ($K$)', fontsize=17)
         # save kappa data
         top.write_plot_data(data_path + "/kappa.dat", (T, kappa), "T [K], kappa [pW/K]")
         plt.savefig(data_path + "/kappa.pdf", bbox_inches='tight')
     else:
-        plt.ylabel(r'$\kappa^{\mathrm{c}}_{\mathrm{ph}}$ ($\mathrm{pw/K}$)', fontsize=17)
+        plt.set_ylabel(r'$\kappa^{\mathrm{c}}_{\mathrm{ph}}$ ($\mathrm{pw/K}$)', fontsize=17)
 
         ax.plot(E[E_min_index:E_max_index]*har2meV, kappa)
-        plt.xlabel('Energy ($\mathrm{meV}$)',fontsize=17)
+        ax.set_xlabel('Energy ($\mathrm{meV}$)',fontsize=17)
 
         plt.savefig(data_path + "/kappa_c.pdf", bbox_inches='tight')
         #plt.clf()
