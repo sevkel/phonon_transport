@@ -301,7 +301,12 @@ if __name__ == '__main__':
 	Sigma = calculate_Sigma(w,g0,gamma,M_L,M_C)
 	# set up dynamical matrix K
 	D = top.create_dynamical_matrix(filename_hessian, filename_coord, t2SI=False)
-	coord = top.read_coord_file(filename_coord)
+
+	if (filename_coord.endswith('.xyz')):
+		coord = top.read_xyz_file(filename_coord)
+		coord = top.x2t(coord)
+	else:
+		coord = top.read_coord_file(filename_coord)
 
 	Pv = list()
 	params = w,Sigma,data_path,coord,n_l,n_r,gamma,in_plane,D,eigenchannel,every_nth,channel_max
