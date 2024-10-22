@@ -1,0 +1,12 @@
+[Data Input]
+data_path=../test/
+transp_name=phonon_trans.dat
+transp_units=har/(bohr**2*u)
+
+[Calculation]
+T_min=0.1
+T_max=600
+kappa_grid_points=5000
+kappa_int_lower_E=0
+kappa_int_upper_E=22
+T_kappa_c=77

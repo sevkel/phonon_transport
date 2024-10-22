@@ -117,9 +117,10 @@ if __name__ == '__main__':
         for i in range(E_min_index, E_max_index):
             E_i = E[E_min_index:i]
             tau_ph = np.asarray(transport[1, :][E_min_index:i], dtype=np.float64)
-            tau_ph_ch1 = np.asarray(transport[2, :][E_min_index:i], dtype=np.float64)
-            tau_ph_ch2 = np.asarray(transport[3, :][E_min_index:i], dtype=np.float64)
-            tau_ph_ch3 = np.asarray(transport[4, :][E_min_index:i], dtype=np.float64)
+            if transport.shape[0] > 2:
+                tau_ph_ch1 = np.asarray(transport[2, :][E_min_index:i], dtype=np.float64)
+                tau_ph_ch2 = np.asarray(transport[3, :][E_min_index:i], dtype=np.float64)
+                tau_ph_ch3 = np.asarray(transport[4, :][E_min_index:i], dtype=np.float64)
             T = T_kappa_c
             kappa.append(calculate_kappa(tau_ph, E_i, T))
             #if transport contains channel resolved data
@@ -156,7 +157,7 @@ if __name__ == '__main__':
         top.write_plot_data(data_path + "/kappa.dat", (T, kappa), "T [K], kappa [pW/K]")
         plt.savefig(data_path + "/kappa.pdf", bbox_inches='tight')
     else:
-        plt.set_ylabel(r'$\kappa^{\mathrm{c}}_{\mathrm{ph}}$ ($\mathrm{pw/K}$)', fontsize=17)
+        ax.set_ylabel(r'$\kappa^{\mathrm{c}}_{\mathrm{ph}}$ ($\mathrm{pw/K}$)', fontsize=17)
 
         ax.plot(E[E_min_index:E_max_index]*har2meV, kappa)
         ax.set_xlabel('Energy ($\mathrm{meV}$)',fontsize=17)

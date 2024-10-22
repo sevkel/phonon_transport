@@ -345,18 +345,20 @@ if __name__ == '__main__':
 
 	#now plot everything
 	E = w*np.sqrt(conversion)*h_bar/(1.60217656535E-22)
-	fig,(ax1,ax2) = plt.subplots(2,1)
+	fig,(ax1,ax2) = plt.subplots(2,1, figsize=(8,5))
 	fig.tight_layout()
+	#add space between ax1 and ax2
+	fig.subplots_adjust(hspace=0.35)
 	ax1.plot(E, T_vals)
 	ax1.set_yscale('log')
-	ax1.set_xlabel('Phonon Energy ($\mathrm{meV}$)',fontsize=12)
-	ax1.set_ylabel(r'Transmission $\tau_{\mathrm{ph}}$',fontsize=12)
+	ax1.set_xlabel('Energy ($\mathrm{meV}$)',fontsize=12)
+	ax1.set_ylabel(r'$\tau_{\mathrm{ph}}$',fontsize=12)
 	ax1.axvline(w_D*np.sqrt(conversion)*h_bar/(1.60217656535E-22),ls="--", color="black")
 	ax1.set_ylim(10E-7,2)
 
 	ax2.plot(T,kappa)
 	ax2.set_xlabel('Temperature ($K$)',fontsize=12)
-	ax2.set_ylabel(r'Thermal Conductance $\mathrm{pw/K}$',fontsize=12)
+	ax2.set_ylabel(r'$\kappa~(\mathrm{pW/K}$)',fontsize=12)
 	plt.rc('xtick', labelsize=12)
 	plt.rc('ytick', labelsize=12)
 	plt.savefig(data_path + "/transport.pdf", bbox_inches='tight')
