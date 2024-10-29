@@ -107,21 +107,27 @@ def calculate_T(i,para):
 	every_nth = para[10]
 	channel_max = para[11]
 
+	lower = para[12]
+	upper = para[13]
+
 	n_atoms = int(D.shape[0]/3)
 
 	#set up self energies
 	sigma_L = np.zeros((n_atoms*3,n_atoms*3), complex)
 	sigma_R = np.zeros((n_atoms*3,n_atoms*3), complex)
+
+	"""
 	if(in_plane==True):
 		lower = 2
 	else:
 		lower = 0
+	"""
 
 	for n_l_ in n_l:
-		for u in range(lower,3):
+		for u in range(lower,upper):
 			sigma_L[n_l_*3+u,n_l_*3+u] = sigma[i]
 	for n_r_ in n_r:
-		for u in range(lower,3):
+		for u in range(lower,upper):
 			sigma_R[n_r_*3+u,n_r_*3+u] = sigma[i]
 	sigma_i = sigma[i]
 
@@ -309,11 +315,29 @@ if __name__ == '__main__':
 		coord = top.read_coord_file(filename_coord)
 
 	Pv = list()
-	params = w,Sigma,data_path,coord,n_l,n_r,gamma,in_plane,D,eigenchannel,every_nth,channel_max
+	params = w,Sigma,data_path,coord,n_l,n_r,gamma,in_plane,D,eigenchannel,every_nth,channel_max,0,3
 	result = map(partial(calculate_T, para=params), i)
+
+	lower = 0
+	upper = 1
+	params_x = w,Sigma,data_path,coord,n_l,n_r,gamma,in_plane,D,eigenchannel,every_nth,channel_max,lower,upper
+	result_x = map(partial(calculate_T, para=params_x), i)
+
+	lower = 1
+	upper = 2
+	params_y = w,Sigma,data_path,coord,n_l,n_r,gamma,in_plane,D,eigenchannel,every_nth,channel_max,lower,upper
+	result_y = map(partial(calculate_T, para=params_y), i)
+
+	lower = 2
+	upper = 3
+	params_z = w,Sigma,data_path,coord,n_l,n_r,gamma,in_plane,D,eigenchannel,every_nth,channel_max,lower,upper
+	result_z = map(partial(calculate_T, para=params_z), i)
 
 	#Total transmission
 	T_vals = list()
+	T_vals_x = list(result_x)
+	T_vals_y = list(result_y)
+	T_vals_z = list(result_z)
 	#Transmission contribution for the firt channel_max channels
 	T_c_vals = list()
 	if(eigenchannel == False):
@@ -331,6 +355,9 @@ if __name__ == '__main__':
 	T=np.linspace(T_min,T_max,kappa_grid_points)
 
 	kappa=list()
+	kappa_x = list()
+	kappa_y = list()
+	kappa_z = list()
 	#w to SI
 	w_kappa = w*np.sqrt(conversion)
 	E = h_bar*w_kappa
@@ -338,6 +365,9 @@ if __name__ == '__main__':
 	E = E/har2J
 	for i in range(0,len(T)):
 		kappa.append(ck.calculate_kappa(T_vals[1:len(T_vals)], E[1:len(E)], T[i]) * har2pJ)
+		kappa_x.append(ck.calculate_kappa(T_vals_x[1:len(T_vals_x)], E[1:len(E)], T[i]) * har2pJ)
+		kappa_y.append(ck.calculate_kappa(T_vals_y[1:len(T_vals_y)], E[1:len(E)], T[i]) * har2pJ)
+		kappa_z.append(ck.calculate_kappa(T_vals_z[1:len(T_vals_z)], E[1:len(E)], T[i]) * har2pJ)
 
 	#save data
 	top.write_plot_data(data_path + "/phonon_trans.dat", (w, T_vals), "w (sqrt(har/(bohr**2*u))), P_vals")
@@ -350,6 +380,9 @@ if __name__ == '__main__':
 	#add space between ax1 and ax2
 	fig.subplots_adjust(hspace=0.35)
 	ax1.plot(E, T_vals)
+	ax1.plot(E, T_vals_x, label="x")
+	ax1.plot(E, T_vals_y, label="y")
+	ax1.plot(E, T_vals_z, label="z")
 	ax1.set_yscale('log')
 	ax1.set_xlabel('Energy ($\mathrm{meV}$)',fontsize=12)
 	ax1.set_ylabel(r'$\tau_{\mathrm{ph}}$',fontsize=12)
@@ -357,11 +390,16 @@ if __name__ == '__main__':
 	ax1.set_ylim(10E-7,2)
 
 	ax2.plot(T,kappa)
+	ax2.plot(T,kappa_x, label="x")
+	ax2.plot(T,kappa_y, label="y")
+	ax2.plot(T,kappa_z, label="z")
 	ax2.set_xlabel('Temperature ($K$)',fontsize=12)
 	ax2.set_ylabel(r'$\kappa~(\mathrm{pW/K}$)',fontsize=12)
 	plt.rc('xtick', labelsize=12)
 	plt.rc('ytick', labelsize=12)
+	plt.legend(ncol=4, fontsize=12)
 	plt.savefig(data_path + "/transport.pdf", bbox_inches='tight')
+	plt.savefig(data_path + "/transport.svg", bbox_inches='tight')
 
 	plt.clf()
 
