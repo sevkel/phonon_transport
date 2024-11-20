@@ -160,7 +160,7 @@ if __name__ == '__main__':
         ax.set_ylabel(r'$\kappa^{\mathrm{c}}_{\mathrm{ph}}$ ($\mathrm{pw/K}$)', fontsize=17)
 
         ax.plot(E[E_min_index:E_max_index]*har2meV, kappa)
-        ax.set_xlabel('Energy ($\mathrm{meV}$)',fontsize=17)
+        ax.set_xlabel(r'Energy ($\mathrm{meV}$)',fontsize=17)
 
         plt.savefig(data_path + "/kappa_c.pdf", bbox_inches='tight')
         #plt.clf()
@@ -171,7 +171,7 @@ if __name__ == '__main__':
             ax.plot(E[E_min_index:E_max_index] * har2meV, kappa_ch2*har2pJ, label="Ch 2")
             ax.plot(E[E_min_index:E_max_index] * har2meV, kappa_ch3*har2pJ, label="Ch 3")
             ax.set_ylabel(r'$\kappa^{\mathrm{c}}_{\mathrm{ph}}$ ($\mathrm{pw/K}$)', fontsize=17)
-            ax.set_xlabel('Energy ($\mathrm{meV}$)', fontsize=17)
+            ax.set_xlabel(r'Energy ($\mathrm{meV}$)', fontsize=17)
             plt.legend()
             plt.grid(which="both")
             plt.savefig(data_path + "/kappa_c_ch.pdf", bbox_inches='tight')

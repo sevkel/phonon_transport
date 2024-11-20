@@ -300,7 +300,8 @@ if __name__ == '__main__':
 
 	Sigma = calculate_Sigma(w,g0,gamma,M_L,M_C)
 	# set up dynamical matrix K
-	D = top.create_dynamical_matrix(filename_hessian, filename_coord, t2SI=False)
+	D, masses = top.create_dynamical_matrix(filename_hessian, filename_coord, t2SI=False, return_masses=True)
+	D = top.enforce_sum_rule(D, masses)
 
 	if (filename_coord.endswith('.xyz')):
 		coord = top.read_xyz_file(filename_coord)
@@ -351,7 +352,7 @@ if __name__ == '__main__':
 	fig.subplots_adjust(hspace=0.35)
 	ax1.plot(E, T_vals)
 	ax1.set_yscale('log')
-	ax1.set_xlabel('Energy ($\mathrm{meV}$)',fontsize=12)
+	ax1.set_xlabel(r'Energy ($\mathrm{meV}$)',fontsize=12)
 	ax1.set_ylabel(r'$\tau_{\mathrm{ph}}$',fontsize=12)
 	ax1.axvline(w_D*np.sqrt(conversion)*h_bar/(1.60217656535E-22),ls="--", color="black")
 	ax1.set_ylim(10E-7,2)
@@ -370,7 +371,7 @@ if __name__ == '__main__':
 		for i in range(T_c_vals.shape[1]):
 			ax.plot(E, T_c_vals[:,i], label=i+1)
 		ax.set_yscale('log')
-		ax.set_xlabel('Phonon Energy ($\mathrm{meV}$)', fontsize=12)
+		ax.set_xlabel(r'Phonon Energy ($\mathrm{meV}$)', fontsize=12)
 		ax.set_ylabel(r'Transmission $\tau_{\mathrm{ph}}$', fontsize=12)
 		ax.axvline(w_D * np.sqrt(conversion) * h_bar / (1.60217656535E-22), ls="--", color="black")
 		ax.axhline(1, ls="--", color="black")
