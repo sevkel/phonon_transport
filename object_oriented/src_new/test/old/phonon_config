@@ -1,0 +1,27 @@
+[Data Input]
+data_path=../src/test
+hessian_name=hessian
+coord_name=xtbopt.xyz
+
+[Calculation]
+n_l=0,1,2
+n_r=0,1,2
+M_L=Au
+M_C=Au
+gamma=-0.1
+E_D=80
+N=2000
+in_plane=False
+T_min=0.001
+T_max=300
+kappa_grid_points=1000
+T_kappa_c=77
+
+[Eigenchannel]
+eigenchannel=False
+every_nth=1
+channel_max=3
+
+[Data Output]
+plot_g=True
+
